@@ -214,7 +214,22 @@ if (!function_exists('sss')) {
      * @return mixed|null
      */
     function sss($key, $default = null, $filter = '', $strict = 1) {
-        $in   = input($key, $default, $filter);
+        $in = input($key, $default, $filter);
+        array_walk($in, function (&$val) use ($strict) {
+            $val = _filterInput($val, $strict);
+        });
+        return $in;
+    }
+}
+
+if (!function_exists('_filterInput')) {
+    /**
+     * 过滤输入内容,违规则返回null
+     * @param $in
+     * @param int $strict 严格程度, 0 任意, 1 数字字母下划线中日韩文, 2 数字字母下划线中文, 3 数字字母下划线, 4 数字
+     * @return string|string[]|null
+     */
+    function _filterInput($in, $strict = 1) {
         $deny = ['/', '\\', ';', '<', '>', '\'', '\"', '%', '(', ')', '&', '+', '=', '||', '&quot;', '&apos;', '&amp;', '&lt;', '&gt;'];
         foreach ($deny as $chr) {
             if (strpos($in, $chr) > -1) {
