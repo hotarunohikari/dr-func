@@ -3,7 +3,7 @@
 /**
  * hotarunohikari
  * just named for lucky , 38726239
- * 
+ *
  * 辅助工具函数
  * 将此文件放置于application目录下,在common.php文件中include_once即可
  */
@@ -115,27 +115,18 @@ if (!function_exists('drUpload')) {
         $cfg       = array_merge(['size' => 1024 * 1024 * 5, 'ext' => 'jpg,png,gif,bmp,heic'], $cfg);
         $files     = $file ? request()->file($file) : request()->file();
         $paths     = [];
-        // 默认返回错误
-        $result = [
-            'error'   => 1,
-            'message' => '文件上传错误',
-        ];
         if ($files) {
             foreach ($files as $file) {
                 $info = $file->validate($cfg)->move($dir);
                 if ($info) {
                     $paths[] = str_replace('\\', '/', $save_path . $info->getSaveName());
                 } else {
-                    return json($result);
+                    return false;
                 }
             }
-            $result = [
-                'error' => 0,
-                'url'   => implode(',', $paths)
-            ];
-            return json($result);
+            return implode(',', $paths);
         }
-        return json($result);
+        return false;
     }
 }
 
@@ -232,10 +223,10 @@ if (!function_exists('sss')) {
         }
         $patMap = [
             0 => '/[\s\S]/',
-            1 => '/[\x{2E80}-\x{9FFF}0-9a-zA-Z_]+/u',
-            2 => '/[\x{4e00}-\x{9fa5}0-9a-zA-Z_]+/u',
-            3 => '/[0-9a-zA-Z_]/i',
-            4 => '/[0-9]/i',
+            1 => '/^[\x{2E80}-\x{9FFF}0-9a-zA-Z_]+$/u',
+            2 => '/^[\x{4e00}-\x{9fa5}0-9a-zA-Z_]+$/u',
+            3 => '/^[A-Za-z0-9]+$/',
+            4 => '/^[0-9]+$/',
         ];
         $pat    = empty($patMap[$strict]) ? $patMap[3] : $patMap[$strict];
         if (!preg_match($pat, $in)) {
