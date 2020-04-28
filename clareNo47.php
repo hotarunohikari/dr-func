@@ -90,6 +90,39 @@ if (!function_exists('db_cfg')) {
     }
 }
 
+if (!function_exists('line_cfg')) {
+    /**
+     * 多行配置项转数组,一行一个
+     * 5
+     * 4
+     * 3
+     * 21
+     * 支持二级分隔转关联数组
+     * 1|100
+     * 2|200
+     * 3|300
+     * 4|400
+     * @param string|array $raw
+     * @param null $delimiter 二级分隔符
+     * @return array|string
+     */
+    function line_cfg($raw, $delimiter = null) {
+        if (is_string($raw)) {
+            $cfgArr = explode(PHP_EOL, str_replace(' ', '', $raw));
+            if (!empty($delimiter)) {
+                $reArr = [];
+                array_walk($cfgArr, function ($val) use ($delimiter, &$reArr) {
+                    $arr            = explode($delimiter, $val);
+                    $reArr[$arr[0]] = $arr[1];
+                });
+                return $reArr;
+            }
+            return $cfgArr;
+        }
+        return $raw;
+    }
+}
+
 if (!function_exists('vali')) {
     /**
      * 通用验证函数
@@ -207,14 +240,14 @@ if (!function_exists('sss')) {
     /**
      * Safe on xSS
      * 简易防xss,前台用此函数替代TP的input函数获取输入
-     * @param $key
+     * @param string $key
      * @param null $default
      * @param string $filter
      * @param int $strict 严格程度, 0 任意, 1 数字字母下划线中日韩文, 2 数字字母下划线中文, 3 数字字母下划线, 4 数字
      * @return mixed|null
      */
-    function sss($key, $default = null, $filter = '', $strict = 1) {
-        $in = input($key, $default, $filter);
+    function sss($key = '', $default = null, $filter = '', $strict = 1) {
+        $in = (array)input($key, $default, $filter);
         array_walk($in, function (&$val) use ($strict) {
             $val = _filterInput($val, $strict);
         });
