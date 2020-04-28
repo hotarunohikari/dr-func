@@ -2,16 +2,26 @@
 
 /**
  * hotarunohikari
+ * just named for lucky , 38726239
+ * 
  * 辅助工具函数
+ * 将此文件放置于application目录下,在common.php文件中include_once即可
  */
+
+use think\exception\ValidateException;
+
+defined('DS') or define('DS', DIRECTORY_SEPARATOR);
+defined('APP_PATH') or define('APP_PATH', dirname(__FILE__) . DS);
+defined('DROK') or define('DROK', 1);
+defined('DRFAIL') or define('DRFAIL', 0);
 
 if (!function_exists('get_cfg')) {
     /**
      * 从文件中加载配置项
      * 位于common的config目录下
      *
-     * @param $file 文件名称
-     * @param $ukey 配置项名称
+     * @param string $file 文件名称
+     * @param string $ukey 配置项名称
      * @param int $expire
      * @return array|mixed
      */
@@ -80,6 +90,72 @@ if (!function_exists('db_cfg')) {
     }
 }
 
+if (!function_exists('vali')) {
+    /**
+     * 通用验证函数
+     * @param string $validateKlass 验证器类名
+     * @param array $data 参与验证的数据
+     * @return bool
+     */
+    function vali($validateKlass, $data) {
+        try {
+            $validate = validate($validateKlass)->check($data);
+        } catch (ValidateException $exception) {
+            $judge = $exception->getMessage();
+            exit(json_encode(apiPack([], DRFAIL, $judge), JSON_UNESCAPED_UNICODE));
+        }
+        return $validate;
+    }
+}
+
+if (!function_exists('vali')) {
+    function drUpload($cfg = [], $file = null) {
+        $dir       = str_replace('\\', '/', ROOT_PATH . 'public/uploads');
+        $save_path = '/public/uploads/';
+        $cfg       = array_merge(['size' => 1024 * 1024 * 5, 'ext' => 'jpg,png,gif,bmp,heic'], $cfg);
+        $files     = $file ? request()->file($file) : request()->file();
+        $paths     = [];
+        // 默认返回错误
+        $result = [
+            'error'   => 1,
+            'message' => '文件上传错误',
+        ];
+        if ($files) {
+            foreach ($files as $file) {
+                $info = $file->validate($cfg)->move($dir);
+                if ($info) {
+                    $paths[] = str_replace('\\', '/', $save_path . $info->getSaveName());
+                } else {
+                    return json($result);
+                }
+            }
+            $result = [
+                'error' => 0,
+                'url'   => implode(',', $paths)
+            ];
+            return json($result);
+        }
+        return json($result);
+    }
+}
+
+if (!function_exists('apiPack')) {
+    /**
+     * API通用返回信息打包
+     * @param array $data 数据
+     * @param int $code 状态码
+     * @param null $msg 通用信息
+     * @return array
+     */
+    function apiPack($data = [], $code = DROK, $msg = null) {
+        return [
+            'code' => $code,
+            'msg'  => $msg ?? ($code == DROK ? 'success' : 'fail'),
+            'data' => $data
+        ];
+    }
+}
+
 if (!function_exists('tooFast')) {
     /**
      * 基于缓存的判定,判断执行间隔是否太快
@@ -141,16 +217,29 @@ if (!function_exists('sss')) {
      * Safe on xSS
      * 简易防xss,前台用此函数替代TP的input函数获取输入
      * @param $key
+     * @param null $default
+     * @param string $filter
+     * @param int $strict 严格程度, 0 任意, 1 数字字母下划线中日韩文, 2 数字字母下划线中文, 3 数字字母下划线, 4 数字
      * @return mixed|null
      */
-    function sss($key) {
-        $in    = input($key);
-        $deny  = ['/', '\\', ';', '<', '>', '\'', '\"', '%', '(', ')', '&', '+', '=', '||', '&quot;', '&apos;', '&amp;', '&lt;', '&gt;'];
-        $lower = strtolower($in);
+    function sss($key, $default = null, $filter = '', $strict = 1) {
+        $in   = input($key, $default, $filter);
+        $deny = ['/', '\\', ';', '<', '>', '\'', '\"', '%', '(', ')', '&', '+', '=', '||', '&quot;', '&apos;', '&amp;', '&lt;', '&gt;'];
         foreach ($deny as $chr) {
-            if (strpos($lower, $chr) > -1) {
+            if (strpos($in, $chr) > -1) {
                 return null;
             }
+        }
+        $patMap = [
+            0 => '/[\s\S]/',
+            1 => '/[\x{2E80}-\x{9FFF}0-9a-zA-Z_]+/u',
+            2 => '/[\x{4e00}-\x{9fa5}0-9a-zA-Z_]+/u',
+            3 => '/[0-9a-zA-Z_]/i',
+            4 => '/[0-9]/i',
+        ];
+        $pat    = empty($patMap[$strict]) ? $patMap[3] : $patMap[$strict];
+        if (!preg_match($pat, $in)) {
+            return null;
         }
         $search  = array(" ", "　", "\n", "\r", "\t");
         $replace = array("", "", "", "", "");
