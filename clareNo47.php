@@ -108,7 +108,7 @@ if (!function_exists('vali')) {
     }
 }
 
-if (!function_exists('vali')) {
+if (!function_exists('drUpload')) {
     function drUpload($cfg = [], $file = null) {
         $dir       = str_replace('\\', '/', ROOT_PATH . 'public/uploads');
         $save_path = '/public/uploads/';
