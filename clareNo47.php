@@ -2,6 +2,8 @@
 
 /**
  * hotarunohikari
+ * before use u need
+ * composer require hotarunohikari/dr-filter
  * just named for lucky , 38726239
  *
  * 辅助工具函数
@@ -102,11 +104,15 @@ if (!function_exists('line_cfg')) {
      * 2|200
      * 3|300
      * 4|400
-     * @param string|array $raw
+     * @param string|array $raw 原始数据
      * @param null $delimiter 二级分隔符
+     * @param bool $filterNull 过滤空值,默认保留空值
      * @return array|string
      */
-    function line_cfg($raw, $delimiter = null) {
+    function line_cfg($raw, $delimiter = null, $filterNull = false) {
+		if (empty($raw)) {
+            return $raw;
+        }
         if (is_string($raw)) {
             $cfgArr = explode(PHP_EOL, str_replace(' ', '', $raw));
             if (!empty($delimiter)) {
@@ -115,11 +121,11 @@ if (!function_exists('line_cfg')) {
                     $arr            = explode($delimiter, $val);
                     $reArr[$arr[0]] = $arr[1];
                 });
-                return $reArr;
+                return $filterNull ? array_filter($reArr) : $reArr;
             }
-            return $cfgArr;
+            return $filterNull ? array_filter($cfgArr) : $cfgArr;
         }
-        return $raw;
+        return $filterNull ? array_filter($raw) : $raw;
     }
 }
 
@@ -141,18 +147,25 @@ if (!function_exists('vali')) {
     }
 }
 
-if (!function_exists('drUpload')) {
-    function drUpload($cfg = [], $file = null) {
-        $dir       = str_replace('\\', '/', ROOT_PATH . 'public/uploads');
-        $save_path = '/public/uploads/';
-        $cfg       = array_merge(['size' => 1024 * 1024 * 5, 'ext' => 'jpg,png,gif,bmp,heic'], $cfg);
-        $files     = $file ? request()->file($file) : request()->file();
-        $paths     = [];
+if (!function_exists('dr_upload')) {
+    /**
+     * 文件上传
+     * @param array $cfg ['size'=>1024*1024*5,'ext'=>'jpg,png,gif,bmp,heic']
+     * @param null $name
+     * @param string $save_path
+     * @return bool|string
+     */
+    function dr_upload($cfg = [], $name = null, $save_path = '/public/uploads/') {
+        $dir      = str_replace('\\', '/', ROOT_PATH . 'public/uploads');
+        $savePath = $save_path ?? '/public/uploads/';
+        $cfg      = array_merge(['size' => 1024 * 1024 * 5, 'ext' => 'jpg,png,gif,bmp,heic'], $cfg);
+        $files    = $name ? request()->file($name) : request()->file();
+        $paths    = [];
         if ($files) {
-            foreach ($files as $file) {
+            foreach ((array)$files as $file) {
                 $info = $file->validate($cfg)->move($dir);
                 if ($info) {
-                    $paths[] = str_replace('\\', '/', $save_path . $info->getSaveName());
+                    $paths[] = str_replace('\\', '/', $savePath . $info->getSaveName());
                 } else {
                     return false;
                 }
@@ -163,7 +176,7 @@ if (!function_exists('drUpload')) {
     }
 }
 
-if (!function_exists('apiPack')) {
+if (!function_exists('api_pack')) {
     /**
      * API通用返回信息打包
      * @param array $data 数据
@@ -171,7 +184,7 @@ if (!function_exists('apiPack')) {
      * @param null $msg 通用信息
      * @return array
      */
-    function apiPack($data = [], $code = DROK, $msg = null) {
+    function api_pack($data = [], $code = DROK, $msg = null) {
         return [
             'code' => $code,
             'msg'  => $msg ?? ($code == DROK ? 'success' : 'fail'),
@@ -180,24 +193,49 @@ if (!function_exists('apiPack')) {
     }
 }
 
-if (!function_exists('tooFast')) {
+if (!function_exists('too_fast')) {
     /**
      * 基于缓存的判定,判断执行间隔是否太快
      * @param string $ukey 确保每个会员全局唯一
      * @param int $second 间隔(秒)
+     * @param null $tag
      * @return bool
      */
-    function tooFast($ukey, $second) {
-        $lastOperatorTime = cache($ukey);
-        if ($lastOperatorTime && time() - $lastOperatorTime < $second) {
+    function too_fast($ukey, $second = 5, $tag = null) {
+        if (cache($ukey)) {
             return true;
         }
-        cache($ukey, time());
+        cache($ukey, time(), $second, $tag);
         return false;
     }
 }
 
-if (!function_exists('makeTree')) {
+if (!function_exists('max_erupt')) {
+    /**
+     * 高频接口并发,默认根据请求路由分组
+     * @param int $no 最大并发数
+     * @param string $ukey 唯一标识,如会员ID
+     * @param int $second 访问间隔
+     * @param array $cfg
+     * @param null $tag
+     * @return bool;
+     */
+    function max_erupt($no = 300, $ukey, $second = 5, $cfg = [], $tag = null) {
+        $tag      = $tag ?? request()->url();
+        $fastUkey = $ukey . $tag;
+        // 屏蔽过快
+        if (too_fast($fastUkey, $second)) {
+            return false;
+        }
+        $cfg = [
+
+        ];
+        // 缓存请求
+        cache()->handle;
+    }
+}
+
+if (!function_exists('make_tree')) {
     /**
      * 构建树形结构
      * @param array $items 数据集
@@ -206,7 +244,7 @@ if (!function_exists('makeTree')) {
      * @param string $son
      * @return array
      */
-    function makeTree($items, $id = 'id', $pid = 'pid', $son = 'son') {
+    function make_tree($items, $id = 'id', $pid = 'pid', $son = 'son') {
         $tree   = [];
         $tmpMap = [];
         foreach ($items as $item) {
@@ -224,11 +262,11 @@ if (!function_exists('makeTree')) {
     }
 }
 
-if (!function_exists('aaa')) {
+if (!function_exists('aa')) {
     /**
      *  批量打印变量
      */
-    function aaa() {
+    function aa() {
         $args = func_get_args();
         for ($i = 0, $len = count($args); $i < $len; $i++) {
             dump($args[$i]);
@@ -236,7 +274,7 @@ if (!function_exists('aaa')) {
     }
 }
 
-if (!function_exists('sss')) {
+if (!function_exists('ss')) {
     /**
      * Safe on xSS
      * 简易防xss,前台用此函数替代TP的input函数获取输入
@@ -246,51 +284,17 @@ if (!function_exists('sss')) {
      * @param int $strict 严格程度, 0 任意, 1 数字字母下划线中日韩文, 2 数字字母下划线中文, 3 数字字母下划线, 4 数字
      * @return mixed|null
      */
-    function sss($key = '', $default = null, $filter = '', $strict = 1) {
-        $in = (array)input($key, $default, $filter);
-        array_walk($in, function (&$val) use ($strict) {
-            $val = _filterInput($val, $strict);
-        });
-        return $in;
+    function ss($key = '', $default = null, $filter = '', $strict = 1) {
+        $input = (array)input($key, $default, $filter);
+        return \dr\filter\DrFilter::instance($strict)->filter($input);
     }
 }
 
-if (!function_exists('_filterInput')) {
-    /**
-     * 过滤输入内容,违规则返回null
-     * @param $in
-     * @param int $strict 严格程度, 0 任意, 1 数字字母下划线中日韩文, 2 数字字母下划线中文, 3 数字字母下划线, 4 数字
-     * @return string|string[]|null
-     */
-    function _filterInput($in, $strict = 1) {
-        $deny = ['/', '\\', ';', '<', '>', '\'', '\"', '%', '(', ')', '&', '+', '=', '||', '&quot;', '&apos;', '&amp;', '&lt;', '&gt;'];
-        foreach ($deny as $chr) {
-            if (strpos($in, $chr) > -1) {
-                return null;
-            }
-        }
-        $patMap = [
-            0 => '/[\s\S]/',
-            1 => '/^[\x{2E80}-\x{9FFF}0-9a-zA-Z_]+$/u',
-            2 => '/^[\x{4e00}-\x{9fa5}0-9a-zA-Z_]+$/u',
-            3 => '/^[A-Za-z0-9]+$/',
-            4 => '/^[0-9]+$/',
-        ];
-        $pat    = empty($patMap[$strict]) ? $patMap[3] : $patMap[$strict];
-        if (!preg_match($pat, $in)) {
-            return null;
-        }
-        $search  = array(" ", "　", "\n", "\r", "\t");
-        $replace = array("", "", "", "", "");
-        return str_replace($search, $replace, $in);
-    }
-}
-
-if (!function_exists('zzz')) {
+if (!function_exists('zz')) {
     /**
      * 批量打印变量,并在打印完后中断
      */
-    function zzz() {
+    function zz() {
         $args = func_get_args();
         for ($i = 0, $len = count($args); $i < $len; $i++) {
             if ($i == $len - 1) {
