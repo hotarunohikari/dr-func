@@ -114,7 +114,7 @@ if (!function_exists('line_cfg')) {
             return $raw;
         }
         if (is_string($raw)) {
-            $cfgArr = explode(PHP_EOL, str_replace(' ', '', $raw));
+            $cfgArr = explode("\n", str_replace(' ', '', $raw));
             if (!empty($delimiter)) {
                 $reArr = [];
                 array_walk($cfgArr, function ($val) use ($delimiter, &$reArr) {
