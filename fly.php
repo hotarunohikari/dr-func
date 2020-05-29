@@ -44,22 +44,23 @@ if (!function_exists('get_cfg')) {
         // 自定义配置,位于common的config文件夹下
         $file   = strpos($file, '.') ? $file : $file . '.php';
         $cfgArr = \think\Config::load(APP_PATH . 'common/config/' . $file);
-        // 二级配置
+			// 二级配置
         if (strpos($ukey, '.')) {
-            $ukey    = explode('.', $ukey, 2);
+            $ukey    = explode('.', $ukey);
             $ukey[0] = strtolower($ukey[0]);
             $ukey[1] = strtolower($ukey[1]);
             if (isset($cfgArr[$ukey[0]][$ukey[1]])) {
                 cache($cacheName, $cfgArr[$ukey[0]][$ukey[1]], $expire);
                 return $cfgArr[$ukey[0]][$ukey[1]];
             }
-        }
-        // 一级配置
-        $ukey = strtolower($ukey);
-        if (isset($cfgArr[$ukey])) {
-            cache($cacheName, $cfgArr[$ukey], $expire);
-            return $cfgArr[$ukey];
-        }
+        }else{
+			// 一级配置
+			$ukey = strtolower($ukey);
+			if (isset($cfgArr[$ukey])) {
+				cache($cacheName, $cfgArr[$ukey], $expire);
+				return $cfgArr[$ukey];
+			}
+		}
         return [];
     }
 };
@@ -272,6 +273,48 @@ if (!function_exists('aa')) {
             dump($args[$i]);
         }
     }
+}
+
+/**
+ * 控制台协助纠错函数
+ * @param string $var
+ * @param null $tag
+ * Nameless
+ * 2020/5/27 15:26
+ */
+if (!function_exists('aa')) {
+	function ee($var = 'FLY', $tag = null) {
+		$debug    = debug_backtrace()[0];
+		$file     = $debug['file'];
+		$line     = $debug['line'];
+		$assert   = $var ? ' TRUE' : 'FALSE';
+		$position = $file . ' ' . $line;
+		$tagStr   = $tag ? $tag : '--';
+		switch ($var) {
+			case is_object($var) || is_array($var):
+				$varStr = json_encode($var, JSON_UNESCAPED_UNICODE);
+				break;
+			case is_numeric($var):
+				$varStr = $var ?: 0;
+				break;
+			case is_string($var):
+				$varStr = $var ? $var : '';
+				break;
+			default:
+				$varStr = '--';
+				break;
+		}
+		echo $assert
+			. ' : '
+			. $tagStr
+			. '>'
+			. $varStr
+			. ' '
+			. $position
+			. ' @ '
+			. date("H:i:s")
+			. PHP_EOL;
+	}
 }
 
 if (!function_exists('ss')) {
