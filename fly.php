@@ -348,3 +348,29 @@ if (!function_exists('zz')) {
         }
     }
 }
+
+if (!function_exists('chunk')) {
+    /**
+     * 分块处理函数
+     * $data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+     * $re = chunk($data, 5, function ($item) {
+     *      return $item + 100;
+     * });
+     * @param $data
+     * @param $size
+     * @param $callback
+     * @return array
+     * Nameless
+     * 2020/6/2 16:50
+     */
+    function chunk($data, $size, $callback) {
+        $res = [];
+        array_map(function (&$sub_arr) use ($callback, &$res) {
+            foreach ($sub_arr as $key => &$item) {
+                $item = $callback($item, $key);
+            }
+            $res = array_merge($res, $sub_arr);
+        }, array_chunk($data, $size));
+        return $res;
+    }
+}
