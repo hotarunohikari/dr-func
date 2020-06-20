@@ -1,10 +1,11 @@
+```
 <?php
+
 
 /**
  * hotarunohikari
  * before use u need
  * composer require hotarunohikari/dr-filter
- * just named for lucky , 38726239
  *
  * 辅助工具函数
  * 将此文件放置于application目录下,在common.php文件中include_once即可
@@ -42,25 +43,25 @@ if (!function_exists('get_cfg')) {
             return $cfgValue;
         }
         // 自定义配置,位于common的config文件夹下
-        $file   = strpos($file, '.') ? $file : $file . '.php';
+        $file = strpos($file, '.') ? $file : $file . '.php';
         $cfgArr = \think\Config::load(APP_PATH . 'common/config/' . $file);
-			// 二级配置
+        // 二级配置
         if (strpos($ukey, '.')) {
-            $ukey    = explode('.', $ukey);
+            $ukey = explode('.', $ukey);
             $ukey[0] = strtolower($ukey[0]);
             $ukey[1] = strtolower($ukey[1]);
             if (isset($cfgArr[$ukey[0]][$ukey[1]])) {
                 cache($cacheName, $cfgArr[$ukey[0]][$ukey[1]], $expire);
                 return $cfgArr[$ukey[0]][$ukey[1]];
             }
-        }else{
-			// 一级配置
-			$ukey = strtolower($ukey);
-			if (isset($cfgArr[$ukey])) {
-				cache($cacheName, $cfgArr[$ukey], $expire);
-				return $cfgArr[$ukey];
-			}
-		}
+        } else {
+            // 一级配置
+            $ukey = strtolower($ukey);
+            if (isset($cfgArr[$ukey])) {
+                cache($cacheName, $cfgArr[$ukey], $expire);
+                return $cfgArr[$ukey];
+            }
+        }
         return [];
     }
 };
@@ -111,7 +112,7 @@ if (!function_exists('line_cfg')) {
      * @return array|string
      */
     function line_cfg($raw, $delimiter = null, $filterNull = false) {
-		if (empty($raw)) {
+        if (empty($raw)) {
             return $raw;
         }
         if (is_string($raw)) {
@@ -119,7 +120,7 @@ if (!function_exists('line_cfg')) {
             if (!empty($delimiter)) {
                 $reArr = [];
                 array_walk($cfgArr, function ($val) use ($delimiter, &$reArr) {
-                    $arr            = explode($delimiter, $val);
+                    $arr = explode($delimiter, $val);
                     $reArr[$arr[0]] = $arr[1];
                 });
                 return $filterNull ? array_filter($reArr) : $reArr;
@@ -157,11 +158,11 @@ if (!function_exists('dr_upload')) {
      * @return bool|string
      */
     function dr_upload($cfg = [], $name = null, $save_path = '/public/uploads/') {
-        $dir      = str_replace('\\', '/', ROOT_PATH . 'public/uploads');
+        $dir = str_replace('\\', '/', ROOT_PATH . 'public/uploads');
         $savePath = $save_path ?? '/public/uploads/';
-        $cfg      = array_merge(['size' => 1024 * 1024 * 5, 'ext' => 'jpg,png,gif,bmp,heic'], $cfg);
-        $files    = $name ? request()->file($name) : request()->file();
-        $paths    = [];
+        $cfg = array_merge(['size' => 1024 * 1024 * 5, 'ext' => 'jpg,png,gif,bmp,heic'], $cfg);
+        $files = $name ? request()->file($name) : request()->file();
+        $paths = [];
         if ($files) {
             foreach ((array)$files as $file) {
                 $info = $file->validate($cfg)->move($dir);
@@ -211,31 +212,6 @@ if (!function_exists('too_fast')) {
     }
 }
 
-if (!function_exists('max_erupt')) {
-    /**
-     * 高频接口并发,默认根据请求路由分组
-     * @param int $no 最大并发数
-     * @param string $ukey 唯一标识,如会员ID
-     * @param int $second 访问间隔
-     * @param array $cfg
-     * @param null $tag
-     * @return bool;
-     */
-    function max_erupt($no = 300, $ukey, $second = 5, $cfg = [], $tag = null) {
-        $tag      = $tag ?? request()->url();
-        $fastUkey = $ukey . $tag;
-        // 屏蔽过快
-        if (too_fast($fastUkey, $second)) {
-            return false;
-        }
-        $cfg = [
-
-        ];
-        // 缓存请求
-        cache()->handle;
-    }
-}
-
 if (!function_exists('make_tree')) {
     /**
      * 构建树形结构
@@ -246,7 +222,7 @@ if (!function_exists('make_tree')) {
      * @return array
      */
     function make_tree($items, $id = 'id', $pid = 'pid', $son = 'son') {
-        $tree   = [];
+        $tree = [];
         $tmpMap = [];
         foreach ($items as $item) {
             $tmpMap[$item[$id]] = $item;
@@ -277,44 +253,50 @@ if (!function_exists('aa')) {
 
 /**
  * 控制台协助纠错函数
- * @param string $var
- * @param null $tag
  * Nameless
  * 2020/5/27 15:26
+ * @param string $var
+ * @param null $tag
+ * @param bool $output
+ * @return bool
  */
-if (!function_exists('aa')) {
-	function ee($var = 'FLY', $tag = null) {
-		$debug    = debug_backtrace()[0];
-		$file     = $debug['file'];
-		$line     = $debug['line'];
-		$assert   = $var ? ' TRUE' : 'FALSE';
-		$position = $file . ' ' . $line;
-		$tagStr   = $tag ? $tag : '--';
-		switch ($var) {
-			case is_object($var) || is_array($var):
-				$varStr = json_encode($var, JSON_UNESCAPED_UNICODE);
-				break;
-			case is_numeric($var):
-				$varStr = $var ?: 0;
-				break;
-			case is_string($var):
-				$varStr = $var ? $var : '';
-				break;
-			default:
-				$varStr = '--';
-				break;
-		}
-		echo $assert
-			. ' : '
-			. $tagStr
-			. '>'
-			. $varStr
-			. ' '
-			. $position
-			. ' @ '
-			. date("H:i:s")
-			. PHP_EOL;
-	}
+if (!function_exists('ee')) {
+    function ee($var = 'FLY', $tag = null, $output = true) {
+        if ($output) {
+            $endline  = '<br/>' . PHP_EOL;
+            $debug    = debug_backtrace()[0];
+            $file     = $debug['file'];
+            $line     = $debug['line'];
+            $assert   = $var ? '-TRUE' : 'FALSE';
+            $position = $file . ' ' . $line;
+            $tagStr   = $tag ? $tag : '--';
+            switch ($var) {
+                case is_object($var) || is_array($var):
+                    $varStr = json_encode($var, JSON_UNESCAPED_UNICODE);
+                    break;
+                case is_numeric($var):
+                    $varStr = $var ?: 0;
+                    break;
+                case is_string($var):
+                    $varStr = $var ? $var : '';
+                    break;
+                default:
+                    $varStr = '--';
+                    break;
+            }
+            echo $assert
+                . ' : '
+                . $tagStr
+                . '>'
+                . $varStr
+                . ' '
+                . $position
+                . ' @ '
+                . date("H:i:s")
+                . $endline;
+
+        }
+    }
 }
 
 if (!function_exists('ss')) {
@@ -329,7 +311,7 @@ if (!function_exists('ss')) {
      */
     function ss($key = '', $default = null, $filter = '', $strict = 1) {
         $input = (array)input($key, $default, $filter);
-        return \dr\filter\DrFilter::instance($strict)->filter($input);
+        return (new \dr\filter\DrFilter($strict))->filter($input);
     }
 }
 
@@ -374,3 +356,4 @@ if (!function_exists('chunk')) {
         return $res;
     }
 }
+```
