@@ -28,7 +28,7 @@ if (!function_exists('get_cfg')) {
      * @param int $expire
      * @return array|mixed
      */
-    function get_cfg($file, $ukey, $expire = 180) {
+    function get_cfg($file, $ukey = null, $expire = 180) {
         // 缓存名称
         $cacheName = $ukey ? 'cfg_' . $ukey : 'cfg_' . $file;
         // 优先读缓存
@@ -36,15 +36,14 @@ if (!function_exists('get_cfg')) {
         if ($cfgValue) {
             return $cfgValue;
         }
-        // 其次读TP配置,当ukey为空时此处拦截
-        $cfgValue = config($ukey, null);
-        if ($cfgValue) {
-            cache($cacheName, $cfgValue, $expire);
-            return $cfgValue;
-        }
         // 自定义配置,位于common的config文件夹下
         $file = strpos($file, '.') ? $file : $file . '.php';
-        $cfgArr = \think\Config::load(APP_PATH . 'common/config/' . $file);
+        $cfgArr = include(APP_PATH . 'common/config/' . $file);
+        // 读取全部文件
+        if(!$ukey){
+            cache($cacheName, $cfgArr, $expire);
+            return $cfgArr;
+        }
         // 二级配置
         if (strpos($ukey, '.')) {
             $ukey = explode('.', $ukey);
