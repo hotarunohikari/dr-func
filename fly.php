@@ -17,6 +17,32 @@ defined('APP_PATH') or define('APP_PATH', dirname(__FILE__) . DS);
 defined('DROK') or define('DROK', 1);
 defined('DRFAIL') or define('DRFAIL', 0);
 
+if (!function_exists('remember')) {
+    /**
+     * Notes: 数据记忆
+     * @param $cacheName
+     * @param mixed $data
+     * @param int $expire
+     * @param bool $flush 是否强制刷新
+     * @return array|callable|mixed|object|\think\App
+     */
+    function remember($cacheName, $data = [], $expire = 180, $flush = false) {
+        if (!$flush) {
+            $cfgValue = cache($cacheName, '', $expire);
+            if ($cfgValue) {
+                return $cfgValue;
+            }
+        }
+        if (is_callable($data)) {
+            $result = call_user_func($data, $cacheName);
+            cache($cacheName, $result, $expire);
+            return $result;
+        }
+        cache($cacheName, $data, $expire);
+        return $data;
+    }
+}
+
 if (!function_exists('get_cfg')) {
     /**
      * 从文件中加载配置项
@@ -192,6 +218,46 @@ if (!function_exists('api_pack')) {
         ];
     }
 }
+if (!function_exists('ok')) {
+    /**
+     * API通用返回信息打包-成功
+     * @param array $data 数据
+     * @param int $code 状态码
+     * @param null $msg 通用信息
+     * @return array
+     */
+    function ok($data = [], $code = DROK, $msg = null) {
+        echo json_encode(api_pack($data, $code, $msg), JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+if (!function_exists('no')) {
+    /**
+     * API通用返回信息打包-失败
+     * @param string $msg 通用信息
+     * @param int $code 状态码
+     * @param array $data 数据
+     * @return array
+     */
+    function no($msg = 'fail', $code = DRFAIL, $data = []) {
+        echo json_encode(api_pack($data, $code, $msg), JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+if (!function_exists('out')) {
+    /**
+     * API通用返回信息打包-输出
+     * @param array $data 数据
+     * @param int $code 状态码
+     * @param null $msg 通用信息
+     * @return array
+     */
+    function out($data = [], $msg = null) {
+        return $data ? ok($data) : no($msg);
+    }
+}
 
 if (!function_exists('too_fast')) {
     /**
@@ -321,7 +387,8 @@ if (!function_exists('zz')) {
         $args = func_get_args();
         for ($i = 0, $len = count($args); $i < $len; $i++) {
             if ($i == $len - 1) {
-                halt($args[$i]);
+                dump($args[$i]);
+                exit;
             } else {
                 dump($args[$i]);
             }
@@ -410,5 +477,29 @@ if (!function_exists('noxss')) {
             }
         }
         return $val;
+    }
+}
+
+if (!function_exists('dcopy')) {
+    /**
+     * 深度复制目录和文件
+     * @param $src 源
+     * @param $dst 目标
+     */
+    function dcopy($src, $dst) {
+        if (is_file($src)) {
+            !is_dir(dirname($dst)) && mkdir(dirname($dst), 0777, true);
+            copy($src, $dst);
+        } else {
+            !file_exists($dst) && mkdir($dst, 0777, true);
+            $files = scandir($src);
+            foreach ($files as $file) {
+                if ($file != '.' && $file != '..') {
+                    $srcf = $src . '/' . $file;
+                    $dstf = $dst . '/' . $file;
+                    dcopy($srcf, $dstf);
+                }
+            }
+        }
     }
 }
