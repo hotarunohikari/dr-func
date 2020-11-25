@@ -363,6 +363,31 @@ if (!function_exists('ee')) {
     }
 }
 
+if (!function_exists('ii')) {
+    function ii($input, $map = [])
+    {
+        if (!$input || !$map) {
+            return array_filter($input);
+        }
+        $param = [];
+        foreach ($map as $key => $val) {
+            if (is_array($val)) {
+                $field  = isset($val[0]) ? $val[0] : $val;
+                $default  = isset($val[1]) ? $val[1] : null;
+                $filter = isset($val[2]) ? $val[2] : null;
+                isset($input[$key]) && $param[$field] = $input[$key] != '' ? $input[$key] : $default;
+                if (is_callable($filter)) {
+                    $deal = call_user_func_array($filter, (array)$param[$field]);
+                    $param[$field] = $deal ? $param[$field] : null;
+                }
+            } else {
+                $param[$val] = $input[$key];
+            }
+        }
+        return array_filter($param);
+    }
+}
+
 if (!function_exists('ss')) {
     /**
      * Safe on xSS
